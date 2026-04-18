@@ -1,0 +1,42 @@
+version: "3.9"
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: nwo
+      POSTGRES_PASSWORD: nwopass
+      POSTGRES_DB: nwo_api
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_api:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nwo -d nwo_api"]
+      interval: 10s; timeout: 5s; retries: 5
+
+  api-gateway:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nwo:nwopass@postgres:5432/nwo_api
+      LAYER1_URL: http://host.docker.internal:8000
+      LAYER2_URL: http://host.docker.internal:8001
+      LAYER3_URL: http://host.docker.internal:8002
+      LAYER4_URL: http://host.docker.internal:8003
+      API_PORT: "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s; timeout: 10s; retries: 3; start_period: 15s
+    volumes:
+      - ./src:/app/src
+
+volumes:
+  postgres_api:
