@@ -1,5 +1,7 @@
 """NWO Robotics API Gateway — FastAPI application."""
 
+from .routes.identities import router as identities_router
+
 from __future__ import annotations
 
 import os
@@ -9,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ..models.database import create_tables
 from .routes import router
+
+app.include_router(identities_router)
 
 app = FastAPI(
     title="NWO Robotics API",
